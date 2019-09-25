@@ -11,26 +11,26 @@ Line #      Hits         Time  Per Hit   % Time  Line Contents
    463                                           def get_transactions():
    464        16      24291.0   1518.2      0.1      user = get_user()
    465        16        381.0     23.8      0.0      conn = dbh()
-   466                                           
+   466
    467        16         24.0      1.5      0.0      item_id = 0
    468        16         19.0      1.2      0.0      created_at = 0
-   469                                           
+   469
    470        16       1458.0     91.1      0.0      item_id_str = flask.request.args.get('item_id')
    471        16         26.0      1.6      0.0      if item_id_str:
    472         8         23.0      2.9      0.0          if not item_id_str.isdecimal() or int(item_id_str) < 0:
    473                                                       http_json_error(requests.codes['bad_request'], "item_id param error")
    474         8         11.0      1.4      0.0          item_id = int(item_id_str)
-   475                                           
+   475
    476        16        235.0     14.7      0.0      created_at_str = flask.request.args.get('created_at')
    477        16         22.0      1.4      0.0      if created_at_str:
    478         8         16.0      2.0      0.0          if not created_at_str.isdecimal() or int(created_at_str) < 0:
    479                                                       http_json_error(requests.codes['bad_request'], "created_at param error")
    480         8         12.0      1.5      0.0          created_at = int(created_at_str)
-   481                                           
+   481
    482        16        144.0      9.0      0.0      with conn.cursor() as c:
-   483                                           
+   483
    484        16         21.0      1.3      0.0          try:
-   485                                           
+   485
    486        16         24.0      1.5      0.0              if item_id > 0 and created_at > 0:
    487         8         11.0      1.4      0.0                  sql = "SELECT * FROM `items` WHERE (`seller_id` = %s OR `buyer_id` = %s) AND `status` IN (%s,%s,%s,%s,%s) AND (`created_at` < %s OR (`created_at` <= %s AND `id` < %s)) ORDER BY `created_at` DESC, `id` DESC LIMIT %s"
    488         8         10.0      1.2      0.0                  c.execute(sql, (
@@ -46,7 +46,7 @@ Line #      Hits         Time  Per Hit   % Time  Line Contents
    498         8          9.0      1.1      0.0                      item_id,
    499         8     240254.0  30031.8      0.7                      Constants.TRANSACTIONS_PER_PAGE + 1,
    500                                                           ))
-   501                                           
+   501
    502                                                       else:
    503         8         10.0      1.2      0.0                  sql = "SELECT * FROM `items` WHERE (`seller_id` = %s OR `buyer_id` = %s ) AND `status` IN (%s,%s,%s,%s,%s) ORDER BY `created_at` DESC, `id` DESC LIMIT %s"
    504         8         27.0      3.4      0.0                  c.execute(sql, [
@@ -59,53 +59,52 @@ Line #      Hits         Time  Per Hit   % Time  Line Contents
    511         8         14.0      1.8      0.0                      Constants.ITEM_STATUS_STOP,
    512         8     335145.0  41893.1      1.0                      Constants.TRANSACTIONS_PER_PAGE + 1,
    513                                                           ])
-   514                                           
+   514
    515        16         50.0      3.1      0.0              item_details = []
    516        16         22.0      1.4      0.0              while True:
    517       186        916.0      4.9      0.0                  item = c.fetchone()
-   518                                           
+   518
    519       186        271.0      1.5      0.0                  if item is None:
    520        15        132.0      8.8      0.0                      break
-   521                                           
+   521
    522       171      74971.0    438.4      0.2                  seller = get_user_simple_by_id(item["seller_id"])
    523       171     114816.0    671.4      0.4                  category = get_category_by_id(item["category_id"])
-   524                                           
+   524
    525       171        452.0      2.6      0.0                  item["category"] = category
    526       171        714.0      4.2      0.0                  item["seller"] = to_user_json(seller)
    527       171        840.0      4.9      0.0                  item["image_url"] = get_image_url(item["image_name"])
    528       171       4698.0     27.5      0.0                  item = to_item_json(item, simple=False)
-   529                                           
+   529
    530       171        355.0      2.1      0.0                  item_details.append(item)
-   531                                           
+   531
    532       171       1765.0     10.3      0.0                  with conn.cursor() as c2:
    533       171        240.0      1.4      0.0                      sql = "SELECT * FROM `transaction_evidences` WHERE `item_id` = %s"
    534       171      64663.0    378.1      0.2                      c2.execute(sql, [item['id']])
    535       171        983.0      5.7      0.0                      transaction_evidence = c2.fetchone()
-   536                                           
-   537                                           
+   536
+   537
    538       171       1504.0      8.8      0.0                      if transaction_evidence:
    539        50         68.0      1.4      0.0                          sql = "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = %s"
    540        50      12534.0    250.7      0.0                          c2.execute(sql, [transaction_evidence["id"]])
    541        50        333.0      6.7      0.0                          shipping = c2.fetchone()
    542        50         79.0      1.6      0.0                          if not shipping:
    543                                                                       http_json_error(requests.codes['not_found'], "shipping not found")
-   544                                           
+   544
    545        50   31429344.0 628586.9     97.2                          ssr = api_shipment_status(get_shipment_service_url(), {"reserve_id": shipping["reserve_id"]})
    546        49        222.0      4.5      0.0                          item["transaction_evidence_id"] = transaction_evidence["id"]
    547        49         89.0      1.8      0.0                          item["transaction_evidence_status"] = transaction_evidence["status"]
    548        49       1288.0     26.3      0.0                          item["shipping_status"] = ssr["status"]
-   549                                           
+   549
    550         1         32.0     32.0      0.0          except MySQLdb.Error as err:
    551                                                       app.logger.exception(err)
    552                                                       http_json_error(requests.codes['internal_server_error'], "db error")
-   553                                           
+   553
    554        15         22.0      1.5      0.0      has_next = False
    555        15         38.0      2.5      0.0      if len(item_details) > Constants.TRANSACTIONS_PER_PAGE:
    556        14         18.0      1.3      0.0          has_next = True
    557        14         41.0      2.9      0.0          item_details = item_details[:Constants.TRANSACTIONS_PER_PAGE]
-   558                                           
+   558
    559        15         33.0      2.2      0.0      return flask.jsonify(dict(
    560        15         20.0      1.3      0.0          items=item_details,
    561        15       7039.0    469.3      0.0          has_next=has_next,
    562                                               ))
-

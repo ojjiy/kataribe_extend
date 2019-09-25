@@ -1,0 +1,15 @@
+Timer unit: 1e-06 s
+
+Total time: 0.001659 s
+File: ./script.py
+Function: f at line 5
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+     5                                           @pr
+     6                                           def f(x):
+     7         3          6.0      2.0      0.4      s = 0
+     8      3003        736.0      0.2     44.4      for i in range(x):
+     9      3000        917.0      0.3     55.3          s += i
+    10         3          0.0      0.0      0.0      return s
+
