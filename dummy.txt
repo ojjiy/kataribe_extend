@@ -101,7 +101,7 @@ Line #      Hits         Time  Per Hit   % Time  Line Contents
    553
    554        15         22.0      1.5      0.0      has_next = False
    555        15         40.0      2.7      0.0      if len(item_details) > Constants.TRANSACTIONS_PER_PAGE:
-   556        11         16.0      1.5      0.0          has_next = True
+   556        11         16.0      1.5      0.0          has_next = Truea
    557        11         37.0      3.4      0.0          item_details = item_details[:Constants.TRANSACTIONS_PER_PAGE]
    558
    559        15         39.0      2.6      0.0      return flask.jsonify(dict(

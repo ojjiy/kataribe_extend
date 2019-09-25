@@ -3,52 +3,74 @@ import sys
 import argparse
 import glob
 import parse
+import copy
 
-def parse_file(file):
-  file_info = {}
-  with open(file) as f:
-    data = f.readlines()
-  file_info['unit'] = parse.parse("Timer unit: {:g} s", data[0])[0]
-  file_info['time'] = parse.parse("Total time: {:g} s", data[2])[0]
-  file_info['fname'] = parse.parse("File: {:S}", data[3])[0]
-  file_info['func_name'] = parse.parse("Function: {:S} at line {:d}", data[4])[0]
-  file_info['line_num'] = parse.parse("Function: {:S} at line {:d}", data[4])[1]
+class FileInfo():
+  def __init__(self, filename=None):
+    self.content = {}
+    self.filename=filename
+    if filename is not None:
+      with open(filename) as f:
+        data = f.readlines()
+      self.content['unit'] = parse.parse("Timer unit: {:g} s", data[0])[0]
+      self.content['time'] = parse.parse("Total time: {:g} s", data[2])[0]
+      self.content['fname'] = parse.parse("File: {:S}", data[3])[0]
+      self.content['func_name'] = parse.parse("Function: {:S} at line {:d}", data[4])[0]
+      self.content['line_num'] = parse.parse("Function: {:S} at line {:d}", data[4])[1]
 
-  file_info['res'] = {}
-  for l in (x.strip() for x in data[8:]):
-    if l=="":
-      break
-    chunk = l.split()
-    line = int(chunk[0])
-    file_info['res'][line] = {}
-    if len(chunk)<2:
-      continue
-    line_dict = parse.parse("{hits:d}{:s}{time:f}{:s}{perhit:f}{:s}{ratio:f}{:s}{code}", " ".join(chunk[1:]))
-    if line_dict is None:
-      file_info['res'][line]['code'] = " ".join(chunk[1:])
-      continue
-    file_info['res'][line] = line_dict.named
-  return file_info
+      self.content['res'] = {}
+      for l in (x.strip() for x in data[8:]):
+        if l=="":
+          break
+        chunk = l.split()
+        line = int(chunk[0])
+        self.content['res'][line] = {}
+        if len(chunk)<2:
+          continue
+        line_dict = parse.parse("{hits:d}{:s}{time:f}{:s}{perhit:f}{:s}{ratio:f}{:s}{code}", " ".join(chunk[1:]))
+        if line_dict is None:
+          self.content['res'][line]['code'] = " ".join(chunk[1:])
+          continue
+        self.content['res'][line] = line_dict.named
 
-def merge_file(*files):
-  if len(files) == 1:
-    return files[0]
-  res = parse_file(files[0])
-  for f in files[1:]:
-    target = parse_file(f)
-    assert res['unit'] == target['unit'] and res['fname'] == target['fname'] and res['func_name'] == target['func_name'] and res['line_num'] == target['line_num'],\
-       "Header information not match\n\t1. function: {} at line {} in file {} (time unit: {})\n\t2. function: {} at line {} in file {} (time unit: {})"\
-         .format(res['func_name'], res['line_num'], res['fname'], res['unit'], target['func_name'], target['line_num'], target['fname'], target['unit'])
-    res['time'] += target['time']
-    for num in res['res'].keys():
-      if len(res['res'][num])==0 or len(target['res'][num])==0:
-        assert len(res['res'][num])==len(target['res'][num]), "Different source code detected at line {}".format(num)
+  def isAddable(self, other):
+    return self.content['unit'] == other.content['unit'] and self.content['fname'] == other.content['fname'] and self.content['func_name'] == other.content['func_name'] and self.content['line_num'] == other.content['line_num']
+
+  def save_txt(self):
+    pass
+
+  def __add__(self, other):
+    if not self.isAddable(other):
+      raise AssertionError("Header information not match\n\t1. function: {} at line {} in file {} (time unit: {})\n\t2. function: {} at line {} in file {} (time unit: {})"\
+                             .format(self.content['func_name'], self.content['line_num'], self.content['fname'], self.content['unit'], other.content['func_name'], other.content['line_num'], other.content['fname'], other.content['unit']))
+    result = FileInfo()
+    result.filename = self.filename
+    result.content['unit'] = self.content['unit']
+    result.content['time'] = self.content['time']+other.content['time']
+    result.content['fname'] = self.content['fname']
+    result.content['func_name'] = self.content['func_name']
+    result.content['line_num'] = self.content['line_num']
+    result.content['res'] = {}
+    for num in self.content['res'].keys():
+      result.content['res'][num] = {}
+      if len(self.content['res'][num])==0 or len(other.content['res'][num])==0:
+        assert len(self.content['res'][num])==len(other.content['res'][num]), "Different source code detected at line {}".format(num)
         continue
-      assert res['res'][num]['code'] == target['res'][num]['code'], "Different source code detected at line {}\n1. {}\n2. {}"\
-        .format(num, res['res'][num]['code'], target['res'][num]['code'])
-      res['res'][num]['hits'] += target['res'][num]['hits']
-      res['res'][num]['time'] += target['res'][num]
+      assert self.content['res'][num]['code'] == other.content['res'][num]['code'], "Different source code detected at line {}\n{:^30}| {}\n{:^30}| {}"\
+        .format(num, self.filename, self.content['res'][num]['code'], other.filename, other.content['res'][num]['code'])
+      result.content['res'][num]['code'] = self.content['res'][num]['code']
+      if not 'hits' in self.content['res'][num].keys():
+        continue
+      result.content['res'][num]['hits'] = self.content['res'][num]['hits'] + other.content['res'][num]['hits']
+      result.content['res'][num]['time'] = self.content['res'][num]['time'] + other.content['res'][num]['time']
+      result.content['res'][num]['perhit'] = result.content['res'][num]['time'] / result.content['res'][num]['hits']
+      result.content['res'][num]['ratio'] = result.content['res'][num]['time'] * result.content['unit'] * 100 / result.content['time']
+    return result
 
+  def __radd__(self, other):
+    if other==0:
+      return self
+    return self.__add__(other)
 
 def main(cand):
   target = []
@@ -61,9 +83,11 @@ def main(cand):
     print("No target file detected. Abort.")
     exit(0)
   print("Process following {} files: ".format(len(target)))
+  contents=[]
   for f in target:
-    print("\t{}".format(f))
-  merge_file(*target)
+    contents.append(FileInfo(f))
+  total = sum(contents)
+  print(total.content)
 
 def findtxt_recursive(path):
   res = []
