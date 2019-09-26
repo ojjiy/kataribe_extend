@@ -50,7 +50,7 @@ class FileInfo():
     RESET = "\033[m"
     return CRITICAL if ratio > 0.5 else (V_HEAVY if ratio > 0.35 else (HEAVY if ratio>0.2 else (L_HEAVY if ratio>0.1 else (NORMAL if ratio > 0.05 else LIGHT))))
 
-  def save_txt(self, filename, color):
+  def save_txt(self, filename, colorize):
     with open(filename, 'w') as f:
       f.write("Timer unit: {} s\n\nTotal time: {} s\nFile: {}\nFunction: {} at line {}\n\n"\
         .format(self.content['unit'], self.content['time'], self.content['fname'], self.content['func_name'], self.content['line_num']))
@@ -61,11 +61,11 @@ class FileInfo():
         src = f2.readlines()
       for line in self.content['res'].keys():
         if 'hits' in self.content['res'][line].keys():
-          if color:
+          if colorize:
             f.write(self.colorize(self.content['res'][line]['ratio']))
           f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  "\
             .format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio']))
-          if color:
+          if colorize:
             f.write("\033[m")
           f.write(src[line-1])
         else:
