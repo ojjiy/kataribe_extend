@@ -9,6 +9,8 @@ class FileInfo():
   def __init__(self, filename=None):
     self.content = {}
     self.filename=filename
+    self.maxim_hits_digits = 9
+    self.maxim_time_digits = 10
     if filename is not None:
       with open(filename) as f:
         data = f.readlines()
@@ -32,12 +34,38 @@ class FileInfo():
           self.content['res'][line]['code'] = " ".join(chunk[1:])
           continue
         self.content['res'][line] = line_dict.named
+        self.maxim_hits_digits = max(self.maxim_hits_digits, len(str(self.content['res'][line]['hits'])))
+        self.maxim_time_digits = max(self.maxim_time_digits, len(str(int(self.content['res'][line]['time']))))
 
   def isAddable(self, other):
     return self.content['unit'] == other.content['unit'] and self.content['fname'] == other.content['fname'] and self.content['func_name'] == other.content['func_name'] and self.content['line_num'] == other.content['line_num']
 
-  def save_txt(self):
-    pass
+  def colorize(self):
+    CRITICAL = "\e[37;41;1m" # 50% -
+    V_HEAVY = "\e[31;1m" # 35% - 50%
+    HEAVY = "\e[33;1m" # 20% - 35%
+    L_HEAVY = "\e[33m" # 10% - 20%
+    NORMAL = "\e[32m" # 5% - 10%
+    LIGHT = "\e[36m" # - 5%
+    RESET = "\e[m"
+
+  def save_txt(self, filename):
+    with open(filename, 'w') as f:
+      f.write("Timer unit: {} s\n\nTotal time: {} s\nFile: {}\nFunction: {} at line {}\n\n"\
+        .format(self.content['unit'], self.content['time'], self.content['fname'], self.content['func_name'], self.content['line_num']))
+      f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  Line Contents\n"\
+        .format(line_num="Line #", hits="Hits", hits_digits=self.maxim_hits_digits+1, time="Time", time_digits=self.maxim_time_digits+3, per_hit="Per Hit", ratio="% Time"))
+      f.write("="*(6+9+9+self.maxim_time_digits+self.maxim_hits_digits+4+15)+"\n")
+      with open(self.content['fname'], 'r') as f2:
+        src = f2.readlines()
+      for line in self.content['res'].keys():
+        if 'hits' in self.content['res'][line].keys():
+
+          f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  {code}"\
+            .format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio'], code=src[line-1]))
+        else:
+          f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  {code}"\
+            .format(line_num=line, hits="", hits_digits=self.maxim_hits_digits+1, time="", time_digits=self.maxim_time_digits+3, per_hit="", ratio="", code=src[line-1]))
 
   def __add__(self, other):
     if not self.isAddable(other):
@@ -45,6 +73,8 @@ class FileInfo():
                              .format(self.content['func_name'], self.content['line_num'], self.content['fname'], self.content['unit'], other.content['func_name'], other.content['line_num'], other.content['fname'], other.content['unit']))
     result = FileInfo()
     result.filename = self.filename
+    result.maxim_hits_digits = max(self.maxim_hits_digits, other.maxim_hits_digits)
+    result.maxim_time_digits = max(self.maxim_time_digits, other.maxim_hits_digits)
     result.content['unit'] = self.content['unit']
     result.content['time'] = self.content['time']+other.content['time']
     result.content['fname'] = self.content['fname']
@@ -62,7 +92,9 @@ class FileInfo():
       if not 'hits' in self.content['res'][num].keys():
         continue
       result.content['res'][num]['hits'] = self.content['res'][num]['hits'] + other.content['res'][num]['hits']
+      result.maxim_hits_digits = max(result.maxim_hits_digits, len(str(result.content['res'][num]['hits'])))
       result.content['res'][num]['time'] = self.content['res'][num]['time'] + other.content['res'][num]['time']
+      result.maxim_time_digits = max(result.maxim_time_digits, len(str(int(result.content['res'][num]['time']))))
       result.content['res'][num]['perhit'] = result.content['res'][num]['time'] / result.content['res'][num]['hits']
       result.content['res'][num]['ratio'] = result.content['res'][num]['time'] * result.content['unit'] * 100 / result.content['time']
     return result
@@ -85,9 +117,10 @@ def main(cand):
   print("Process following {} files: ".format(len(target)))
   contents=[]
   for f in target:
+    print("\t{}".format(f))
     contents.append(FileInfo(f))
   total = sum(contents)
-  print(total.content)
+  total.save_txt('result.txt')
 
 def findtxt_recursive(path):
   res = []
