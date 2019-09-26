@@ -40,16 +40,17 @@ class FileInfo():
   def isAddable(self, other):
     return self.content['unit'] == other.content['unit'] and self.content['fname'] == other.content['fname'] and self.content['func_name'] == other.content['func_name'] and self.content['line_num'] == other.content['line_num']
 
-  def colorize(self):
-    CRITICAL = "\e[37;41;1m" # 50% -
-    V_HEAVY = "\e[31;1m" # 35% - 50%
-    HEAVY = "\e[33;1m" # 20% - 35%
-    L_HEAVY = "\e[33m" # 10% - 20%
-    NORMAL = "\e[32m" # 5% - 10%
-    LIGHT = "\e[36m" # - 5%
-    RESET = "\e[m"
+  def colorize(self, ratio):
+    CRITICAL = "\033[37;41;1m" # 50% -
+    V_HEAVY = "\033[31;1m" # 35% - 50%
+    HEAVY = "\033[33;1m" # 20% - 35%
+    L_HEAVY = "\033[33m" # 10% - 20%
+    NORMAL = "\033[32m" # 5% - 10%
+    LIGHT = "\033[36m" # - 5%
+    RESET = "\033[m"
+    return CRITICAL if ratio > 0.5 else (V_HEAVY if ratio > 0.35 else (HEAVY if ratio>0.2 else (L_HEAVY if ratio>0.1 else (NORMAL if ratio > 0.05 else LIGHT))))
 
-  def save_txt(self, filename):
+  def save_txt(self, filename, color):
     with open(filename, 'w') as f:
       f.write("Timer unit: {} s\n\nTotal time: {} s\nFile: {}\nFunction: {} at line {}\n\n"\
         .format(self.content['unit'], self.content['time'], self.content['fname'], self.content['func_name'], self.content['line_num']))
@@ -60,9 +61,13 @@ class FileInfo():
         src = f2.readlines()
       for line in self.content['res'].keys():
         if 'hits' in self.content['res'][line].keys():
-
-          f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  {code}"\
-            .format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio'], code=src[line-1]))
+          if color:
+            f.write(self.colorize(self.content['res'][line]['ratio']))
+          f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  "\
+            .format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio']))
+          if color:
+            f.write("\033[m")
+          f.write(src[line-1])
         else:
           f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  {code}"\
             .format(line_num=line, hits="", hits_digits=self.maxim_hits_digits+1, time="", time_digits=self.maxim_time_digits+3, per_hit="", ratio="", code=src[line-1]))
@@ -104,7 +109,7 @@ class FileInfo():
       return self
     return self.__add__(other)
 
-def main(cand):
+def main(cand, color):
   target = []
   for item in cand:
     if os.path.isfile(item) and os.path.splitext(item)[1] == ".txt":
@@ -120,7 +125,7 @@ def main(cand):
     print("\t{}".format(f))
     contents.append(FileInfo(f))
   total = sum(contents)
-  total.save_txt('result.txt')
+  total.save_txt('result.txt', color)
 
 def findtxt_recursive(path):
   res = []
@@ -137,5 +142,6 @@ def findtxt_recursive(path):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('files', nargs='*', help="Specify folders/files to be aggregated. When folder is specified, all text files below the folder are specified")
+  parser.add_argument('--color', action='store_true', help="colorize result with ANSI escape code")
   args = parser.parse_args()
-  main(args.files)
+  main(args.files, args.color)
