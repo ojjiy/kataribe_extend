@@ -57,9 +57,8 @@ class FileInfo():
       f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  Line Contents\n"\
         .format(line_num="Line #", hits="Hits", hits_digits=self.maxim_hits_digits+1, time="Time", time_digits=self.maxim_time_digits+3, per_hit="Per Hit", ratio="% Time"))
       f.write("="*(6+9+9+self.maxim_time_digits+self.maxim_hits_digits+4+15)+"\n")
-      with open(self.content['fname'], 'r') as f2:
-        src = f2.readlines()
       for line in self.content['res'].keys():
+        code = self.content['res'][line].get('code', '') + '\n'
         if 'hits' in self.content['res'][line].keys():
           if colorize:
             f.write(self.colorize(self.content['res'][line]['ratio']))
@@ -67,10 +66,10 @@ class FileInfo():
             .format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio']))
           if colorize:
             f.write("\033[m")
-          f.write(src[line-1])
+          f.write(code)
         else:
           f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  {code}"\
-            .format(line_num=line, hits="", hits_digits=self.maxim_hits_digits+1, time="", time_digits=self.maxim_time_digits+3, per_hit="", ratio="", code=src[line-1]))
+            .format(line_num=line, hits="", hits_digits=self.maxim_hits_digits+1, time="", time_digits=self.maxim_time_digits+3, per_hit="", ratio="", code=code))
 
   def __add__(self, other):
     if not self.isAddable(other):
