@@ -6,7 +6,15 @@ Aggregate statistics of execution time analyzed using greatest tool [line_profil
 - Unite repetitive result without modification to source code
 
 ## Usage
-```./reshape.py [files to be aggregated] [folders which contain files to be aggregated] [--color]```
+```bash
+$ python3 ./reshape.py [files to be aggregated] [folders which contain files to be aggregated] [--color]
+```
+
+## Verification
+```bash
+$ python3 ./reshape.py ./inputs --colorize
+$ less ./result.txt
+```
 
 ## Change
 ### 1.0
