@@ -156,7 +156,7 @@ def findtxt_recursive(path):
         elif os.path.isfile(item) and os.path.splitext(item)[1] == ".txt":
             res.append(item)
         else:
-            print("info: {} is ignored", item)
+            print("info: \'{}\' is ignored".format(item))
     return res
 
 
