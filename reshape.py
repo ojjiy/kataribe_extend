@@ -72,7 +72,7 @@ class FileInfo():
         NORMAL = "\033[32m"  # 5% - 10%
         LIGHT = "\033[36m"  # - 5%
         RESET = "\033[m"
-        return CRITICAL if ratio > 0.5 else (V_HEAVY if ratio > 0.35 else (HEAVY if ratio > 0.2 else (L_HEAVY if ratio > 0.1 else (NORMAL if ratio > 0.05 else LIGHT))))
+        return CRITICAL if ratio > 50 else (V_HEAVY if ratio > 35 else (HEAVY if ratio > 20 else (L_HEAVY if ratio > 10 else (NORMAL if ratio > 5 else LIGHT))))
 
     def save_txt(self, filename, colorize):
         with open(filename, 'w') as f:
