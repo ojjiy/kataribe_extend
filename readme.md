@@ -1,9 +1,9 @@
-## What this file can
-Aggregate statistics of execution time analyzed using greatest tool [line_profiler](https://github.com/rkern/line_profiler).
+## What this program can do
+Aggregate statistics of execution time analysis by the greatest tool [line_profiler](https://github.com/rkern/line_profiler).
 
 ## Benefit
-- Unite multi-thread result
-- Unite repetitive result without modification to source code
+- Unite multi-thread results
+- Unite repetitive results without any modification to source code
 
 ## Usage
 ```bash
