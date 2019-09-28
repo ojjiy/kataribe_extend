@@ -145,42 +145,36 @@ class FileInfo():
         return self.__add__(other)
 
 
-def main(cand, color):
-    target = []
-    for item in cand:
-        if os.path.isfile(item) and os.path.splitext(item)[1] == ".txt":
-            target.append(item)
-        elif os.path.isdir(item):
-            target += findtxt_recursive(item)
-    if len(target) == 0:
-        print("No target file detected. Abort.")
-        exit(0)
-    print("Process following {} files: ".format(len(target)))
-    contents = []
-    for f in target:
-        print("\t{}".format(f))
-        contents.append(FileInfo(f))
-    total = sum(contents)
-    total.save_txt('result.txt', color)
-
-
-def findtxt_recursive(path):
-    res = []
-    for item in glob.glob(os.path.join(path, '*')):
-        if os.path.isdir(item):
-            res += findtxt_recursive(item)
-        elif os.path.isfile(item) and os.path.splitext(item)[1] == ".txt":
-            res.append(item)
+def main(paths, use_color):
+    targets = []
+    for path in paths:
+        if os.path.isdir(path):
+            for item in glob.glob(os.path.join(path, '**'), recursive=True):
+                targets.append(item)
         else:
-            print("info: \'{}\' is ignored".format(item))
-    return res
+            targets.append(path)
+    targets = [t for t in targets if os.path.splitext(t)[1] == '.txt']
+
+    if len(targets) == 0:
+        print('No target file detected.')
+        return
+
+    print('Process following {} files: '.format(len(targets)))
+    print('\n'.join(['\t{}'.format(f) for f in targets]))
+
+    total = sum(map(FileInfo, targets))
+    total.save_txt('result.txt', use_color)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'files', nargs='*', help="Specify folders/files to be aggregated. When folder is specified, all text files below the folder are specified")
-    parser.add_argument('--color', action='store_true',
-                        help="colorize result with ANSI escape code")
+        'files', nargs='*', default=['.'],
+        help='Specify folders/files to be aggregated. When folder is '
+        'specified, all text files below the folder are specified')
+    parser.add_argument(
+        '--color', action='store_true',
+        help="colorize result with ANSI escape code")
     args = parser.parse_args()
+
     main(args.files, args.color)
