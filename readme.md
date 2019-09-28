@@ -13,7 +13,7 @@ $ python3 ./reshape.py [files to be aggregated] [folders which contain files to 
 ## Verification
 ```bash
 $ python3 ./reshape.py ./inputs --colorize
-$ less ./result.txt
+$ less -R ./result.txt
 ```
 
 ## Change
