@@ -1,8 +1,8 @@
 ## What this program can do
-Aggregate statistics of execution time analyze by the greatest tool [line_profiler](https://github.com/rkern/line_profiler).
+Aggregate statistics of execution time analysis by the greatest tool [line_profiler](https://github.com/rkern/line_profiler).
 
 ## Benefit
-- Union multi-thread results
+- Unite multi-thread results
 - Unite repetitive results without any modification to source code
 
 ## Usage
