@@ -64,7 +64,8 @@ class FileInfo():
     def isAddable(self, other):
         return self.content['unit'] == other.content['unit'] and self.content['fname'] == other.content['fname'] and self.content['func_name'] == other.content['func_name'] and self.content['line_num'] == other.content['line_num']
 
-    def colorize(self, ratio):
+    @staticmethod
+    def colorize(ratio):
         CRITICAL = "\033[37;41;1m"  # 50% -
         V_HEAVY = "\033[31;1m"  # 35% - 50%
         HEAVY = "\033[33;1m"  # 20% - 35%
