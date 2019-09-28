@@ -2,8 +2,11 @@ import os
 import sys
 import argparse
 import glob
-import parse
 import copy
+
+import parse
+import termcolor
+
 
 ## Constants
 TIMER_UNIT_DEF = "Timer unit: {unit:g} s"
@@ -65,15 +68,19 @@ class FileInfo():
         return self.content['unit'] == other.content['unit'] and self.content['fname'] == other.content['fname'] and self.content['func_name'] == other.content['func_name'] and self.content['line_num'] == other.content['line_num']
 
     @staticmethod
-    def colorize(ratio):
-        CRITICAL = "\033[37;41;1m"  # 50% -
-        V_HEAVY = "\033[31;1m"  # 35% - 50%
-        HEAVY = "\033[33;1m"  # 20% - 35%
-        L_HEAVY = "\033[33m"  # 10% - 20%
-        NORMAL = "\033[32m"  # 5% - 10%
-        LIGHT = "\033[36m"  # - 5%
-        RESET = "\033[m"
-        return CRITICAL if ratio > 50 else (V_HEAVY if ratio > 35 else (HEAVY if ratio > 20 else (L_HEAVY if ratio > 10 else (NORMAL if ratio > 5 else LIGHT))))
+    def colored(content, ratio):
+        color_list = [
+            (50, ['white', 'on_red'], ['bold']),
+            (35, ['red'], ['bold']),
+            (20, ['yellow'], ['bold']),
+            (10, ['yellow'], []),
+            (5, ['green'], []),
+            (0, ['cyan'], []),
+        ]
+        for ratio_bound, args, attrs in color_list:
+            if ratio >= ratio_bound:
+                return termcolor.colored(content, *args, attrs=attrs)
+        raise RuntimeError('Negative ratio is given: {}'.format(ratio))
 
     def save_txt(self, filename, colorize):
         with open(filename, 'w') as f:
@@ -86,13 +93,11 @@ class FileInfo():
             for line in self.content['res'].keys():
                 code = self.content['res'][line]['code']+"\n" if 'code' in self.content['res'][line].keys() else "\n"
                 if 'hits' in self.content['res'][line].keys():
+                    ratio = self.content['res'][line]['ratio']
+                    stats = "{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  ".format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio'])
                     if colorize:
-                        f.write(self.colorize(
-                            self.content['res'][line]['ratio']))
-                    f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  "
-                            .format(line_num=line, hits=self.content['res'][line]['hits'], hits_digits=self.maxim_hits_digits+1, time=self.content['res'][line]['time'], time_digits=self.maxim_time_digits+3, per_hit=self.content['res'][line]['perhit'], ratio=self.content['res'][line]['ratio']))
-                    if colorize:
-                        f.write("\033[m")
+                        stats = self.colored(stats, ratio)
+                    f.write(stats)
                     f.write(code)
                 else:
                     f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  {code}"
