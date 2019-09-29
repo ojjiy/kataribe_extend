@@ -5,14 +5,19 @@ Aggregate statistics of execution time analysis by the greatest tool [line_profi
 - Unite multi-thread results
 - Unite repetitive results without any modification to source code
 
+## Installation
+```bash
+$ pip install git+https://github.com/ojjiy/line_profiler_extension.git
+```
+
 ## Usage
 ```bash
-$ python3 ./reshape.py [files to be aggregated] [folders which contain files to be aggregated] [--color]
+$ reshape.py [files to be aggregated] [folders which contain files to be aggregated] [--color]
 ```
 
 ## Verification
 ```bash
-$ python3 ./reshape.py ./inputs --colorize
+$ reshape.py ./inputs --colorize
 $ less -R ./result.txt
 ```
 
