@@ -8,7 +8,7 @@ import termcolor
 
 
 class LineInfo():
-    def __init__(self, code, hits=0, time=0):
+    def __init__(self, code, hits, time):
         self.code = code
         self.hits = hits
         self.time = time
@@ -37,22 +37,24 @@ class FileInfo():
         self.fname = summary['fname']
         self.func_name = summary['func_name']
         self.line_num = summary['line_num']
+        code_offset = data[6].find('Line Contents')
 
         self.stats = {}
-        code_offset = data[6].find('Line Contents')
-        for l in (x.rstrip("\n") for x in data[8:]):
-            if l == "":
-                break
-            chunk = l.split()
-            line = int(chunk[0])
-            line_dict = parse.parse(
-                "{hits:d}{:s}{time:f}{:s}{perhit:f}{:s}{ratio:f}{:s}{code}", " ".join(chunk[1:]))
+        for line in data[8:]:
+            line = line.rstrip()
+            code = line[code_offset:]
+            chunk = [s for s in line[:code_offset].split(' ') if s != '']
 
-            code = l[code_offset:]
-            if line_dict is None:
-                self.stats[line] = LineInfo(code)
+            if len(chunk) == 0:
+                continue
+            elif len(chunk) == 1:
+                line_no, hits, time = chunk[0], 0, 0
+            elif len(chunk) == 5:
+                line_no, hits, time = chunk[:3]
             else:
-                self.stats[line] = LineInfo(code, line_dict.named['hits'], line_dict.named['time'])
+                raise RuntimeError('Wrong format: {}'.format(line))
+
+            self.stats[int(line_no)] = LineInfo(code, int(hits), float(time))
 
     def check_addable(self, other):
         assert self.unit == other.unit  # TODO: Fix
