@@ -33,7 +33,7 @@ class FileInfo():
             'Function: {func_name:S} at line {line_num:d}\n',
             ''.join(data[:5]))
         self.unit = summary['unit']
-        self.time = summary['time']
+        self.overall_time = summary['time']
         self.fname = summary['fname']
         self.func_name = summary['func_name']
         self.line_num = summary['line_num']
@@ -75,6 +75,31 @@ class FileInfo():
                 return termcolor.colored(content, *args, attrs=attrs)
         raise RuntimeError('Negative ratio is given: {}'.format(ratio))
 
+    def formatted(self, line_num, hits_width, time_width, use_color):
+        stats = self.stats[line_num]
+        if stats.hits>0:
+            hits = stats.hits
+            time = stats.time
+            per_hit = round(stats.time / stats.hits, 1)
+            ratio =  round(stats.time / self.overall_time * self.unit * 100, 1)
+        else:
+            hits=""
+            time=""
+            per_hit = ""
+            ratio = ""
+        formatted_stat = "{line_num:>6}{hits:>{hits_width}}{time:>{time_width}}{per_hit:>9}{ratio:>9}  {code}\n".format(
+                    line_num=line_num,
+                    hits=hits,
+                    hits_width=hits_width,
+                    time=time,
+                    time_width=time_width,
+                    per_hit=per_hit,
+                    ratio=ratio,
+                    code=stats.code)
+        if use_color and stats.hits>0:
+            formatted_stat = self.colored(formatted_stat, ratio)
+        return formatted_stat
+
     def save_txt(self, f, use_color):
         maxim_hits_digits = 9
         maxim_time_digits = 10
@@ -82,36 +107,32 @@ class FileInfo():
             maxim_hits_digits = max(maxim_hits_digits, len(str(self.stats[line_no].hits)))
             maxim_time_digits = max(maxim_time_digits, len(str(self.stats[line_no].time)))
 
+        hits_width = maxim_hits_digits+1
+        time_width = maxim_time_digits+1
+
         f.write('Timer unit: {} s\n\n'.format(self.unit))
-        f.write('Total time: {} s\n'.format(self.time))
+        f.write('Total time: {} s\n'.format(self.overall_time))
         f.write('File: {}\n'.format(self.fname))
         f.write('Function: {} at line {}\n\n'.format(
             self.func_name, self.line_num))
-        f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  Line Contents\n"
-                .format(line_num="Line #", hits="Hits", hits_digits=maxim_hits_digits+1, time="Time", time_digits=maxim_time_digits+3, per_hit="Per Hit", ratio="% Time"))
-        f.write("="*(6+9+9+maxim_time_digits + maxim_hits_digits+4+15)+"\n")
+        f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}"
+                "  Line Contents\n"
+                .format(line_num="Line #",
+                        hits="Hits",
+                        hits_digits=hits_width,
+                        time="Time",
+                        time_digits=time_width,
+                        per_hit="Per Hit",
+                        ratio="% Time"))
+        f.write("="*(6+hits_width+time_width+9+9+len("  Line Contents"))+"\n")
 
-        for line_no in self.stats.keys():
-            stats = self.stats[line_no]
-            code = stats.code
-            if stats.hits > 0:
-                ratio = stats.time / self.time * self.unit * 100
-                perhit = stats.time / stats.hits
-                stats_str = "{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}.1f}{per_hit:>9.1f}{ratio:>9.1f}  ".format(
-                    line_num=line_no, hits=stats.hits, hits_digits=maxim_hits_digits+1,
-                    time=stats.time, time_digits=maxim_time_digits+3,
-                    per_hit=perhit, ratio=ratio)
-                if use_color:
-                    stats_str = self.colored(stats_str, ratio)
-                f.write(stats_str)
-                f.write(code + '\n')
-            else:
-                f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}  {code}\n"
-                        .format(line_num=line_no, hits="", hits_digits=maxim_hits_digits+1, time="", time_digits=maxim_time_digits+3, per_hit="", ratio="", code=code))
+        for line_num in self.stats.keys():
+            stat_str = self.formatted(line_num, hits_width, time_width, use_color)
+            f.write(stat_str)
 
     def __iadd__(self, other):
         self.check_addable(other)
-        self.time += other.time
+        self.overall_time += other.overall_time
         assert self.stats.keys() == other.stats.keys()  # TODO: error message
 
         for line_no in self.stats.keys():
