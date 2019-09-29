@@ -102,10 +102,12 @@ class FileInfo():
 
     def save_txt(self, f, use_color):
         maxim_hits_digits = 9
-        maxim_time_digits = 10
+        maxim_time_digits = 12
         for line_no in self.stats.keys():
-            maxim_hits_digits = max(maxim_hits_digits, len(str(self.stats[line_no].hits)))
-            maxim_time_digits = max(maxim_time_digits, len(str(self.stats[line_no].time)))
+            maxim_hits_digits = max(maxim_hits_digits,
+                                    len(str(self.stats[line_no].hits)))
+            maxim_time_digits = max(maxim_time_digits,
+                                    len(str(self.stats[line_no].time)))
 
         hits_width = maxim_hits_digits+1
         time_width = maxim_time_digits+1
@@ -115,15 +117,18 @@ class FileInfo():
         f.write('File: {}\n'.format(self.fname))
         f.write('Function: {} at line {}\n\n'.format(
             self.func_name, self.line_num))
-        f.write("{line_num:>6}{hits:>{hits_digits}}{time:>{time_digits}}{per_hit:>9}{ratio:>9}"
-                "  Line Contents\n"
-                .format(line_num="Line #",
-                        hits="Hits",
-                        hits_digits=hits_width,
-                        time="Time",
-                        time_digits=time_width,
-                        per_hit="Per Hit",
-                        ratio="% Time"))
+        f.write("{line_num:>6}"
+                "{hits:>{hits_digits}}"
+                "{time:>{time_digits}}"
+                "{per_hit:>9}"
+                "{ratio:>9}"
+                "  Line Contents\n".format(line_num="Line #",
+                                            hits="Hits",
+                                            hits_digits=hits_width,
+                                            time="Time",
+                                            time_digits=time_width,
+                                            per_hit="Per Hit",
+                                            ratio="% Time"))
         f.write("="*(6+hits_width+time_width+9+9+len("  Line Contents"))+"\n")
 
         for line_num in self.stats.keys():
