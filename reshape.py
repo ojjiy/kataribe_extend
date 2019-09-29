@@ -45,8 +45,6 @@ class FileInfo():
                 break
             chunk = l.split()
             line = int(chunk[0])
-            if len(chunk) < 2:
-                continue
             line_dict = parse.parse(
                 "{hits:d}{:s}{time:f}{:s}{perhit:f}{:s}{ratio:f}{:s}{code}", " ".join(chunk[1:]))
 
