@@ -87,17 +87,17 @@ class FileInfo():
             time=""
             per_hit = ""
             ratio = ""
-        formatted_stat = "{line_num:>6}{hits:>{hits_width}}{time:>{time_width}}{per_hit:>9}{ratio:>9}  {code}\n".format(
+        formatted_stat = "{line_num:>6}{hits:>{hits_width}}{time:>{time_width}}{per_hit:>9}{ratio:>9}".format(
                     line_num=line_num,
                     hits=hits,
                     hits_width=hits_width,
                     time=time,
                     time_width=time_width,
                     per_hit=per_hit,
-                    ratio=ratio,
-                    code=stats.code)
+                    ratio=ratio)
         if use_color and stats.hits>0:
             formatted_stat = self.colored(formatted_stat, ratio)
+        formatted_stat += "  {code}\n".format(code=stats.code)
         return formatted_stat
 
     def save_txt(self, f, use_color):
