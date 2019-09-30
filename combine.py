@@ -85,11 +85,11 @@ class FileInfo():
             per_hit = round(stats.time / stats.hits, 1)
             ratio =  round(stats.time / self.overall_time * self.unit * 100, 1)
         else:
-            hits=""
-            time=""
-            per_hit = ""
-            ratio = ""
-        formatted_stat = "{line_num:>6}{hits:>{hits_width}}{time:>{time_width}}{per_hit:>9}{ratio:>9}".format(
+            hits=''
+            time=''
+            per_hit = ''
+            ratio = ''
+        formatted_stat = '{line_num:>6}{hits:>{hits_width}}{time:>{time_width}}{per_hit:>9}{ratio:>9}'.format(
                     line_num=line_num,
                     hits=hits,
                     hits_width=hits_width,
@@ -99,7 +99,7 @@ class FileInfo():
                     ratio=ratio)
         if use_color and stats.hits>0:
             formatted_stat = self.colored(formatted_stat, ratio)
-        formatted_stat += "  {code}\n".format(code=stats.code)
+        formatted_stat += '  {code}\n'.format(code=stats.code)
         return formatted_stat
 
     def save_txt(self, f, use_color):
@@ -119,19 +119,19 @@ class FileInfo():
         f.write('File: {}\n'.format(self.fname))
         f.write('Function: {} at line {}\n\n'.format(
             self.func_name, self.line_num))
-        f.write("{line_num:>6}"
-                "{hits:>{hits_digits}}"
-                "{time:>{time_digits}}"
-                "{per_hit:>9}"
-                "{ratio:>9}"
-                "  Line Contents\n".format(line_num="Line #",
-                                            hits="Hits",
+        f.write('{line_num:>6}'
+                '{hits:>{hits_digits}}'
+                '{time:>{time_digits}}'
+                '{per_hit:>9}'
+                '{ratio:>9}'
+                '  Line Contents\n'.format(line_num='Line #',
+                                            hits='Hits',
                                             hits_digits=hits_width,
-                                            time="Time",
+                                            time='Time',
                                             time_digits=time_width,
-                                            per_hit="Per Hit",
-                                            ratio="% Time"))
-        f.write("="*(6+hits_width+time_width+9+9+len("  Line Contents"))+"\n")
+                                            per_hit='Per Hit',
+                                            ratio='% Time'))
+        f.write('='*80+'\n')
 
         for line_num in self.stats.keys():
             stat_str = self.formatted(line_num, hits_width, time_width, use_color)
@@ -160,7 +160,7 @@ class FileInfo():
         return self.__add__(other)
 
 
-def main(paths, use_color):
+def main(paths, output, use_color):
     targets = []
     for path in paths:
         if os.path.isdir(path):
@@ -178,19 +178,23 @@ def main(paths, use_color):
     print('\n'.join(['\t{}'.format(f) for f in targets]))
 
     total = sum(map(FileInfo, targets))
-    with open('result.txt', 'w') as f:
+    with open(output, 'w') as f:
         total.save_txt(f, use_color)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'files', nargs='*', default=['.'],
         help='Specify folders/files to be aggregated. When folder is '
         'specified, all text files below the folder are specified')
     parser.add_argument(
+        '--output', default='result.out',
+        help='Specify the output result name.'
+    )
+    parser.add_argument(
         '--color', action='store_true',
-        help="colorize result with ANSI escape code")
+        help='colorize result with ANSI escape code')
     args = parser.parse_args()
 
-    main(args.files, args.color)
+    main(args.files, args.output, args.color)
