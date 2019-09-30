@@ -79,14 +79,14 @@ class FileInfo():
 
     def formatted(self, line_num, hits_width, time_width, use_color):
         stats = self.stats[line_num]
-        if stats.hits>0:
+        if stats.hits > 0:
             hits = stats.hits
             time = stats.time
             per_hit = round(stats.time / stats.hits, 1)
-            ratio =  round(stats.time / self.overall_time * self.unit * 100, 1)
+            ratio = round(stats.time / self.overall_time * self.unit * 100, 1)
         else:
-            hits=''
-            time=''
+            hits = ''
+            time = ''
             per_hit = ''
             ratio = ''
         formatted_stat = '{line_num:>6}{hits:>{hits_width}}{time:>{time_width}}{per_hit:>9}{ratio:>9}'.format(
@@ -97,12 +97,12 @@ class FileInfo():
                     time_width=time_width,
                     per_hit=per_hit,
                     ratio=ratio)
-        if use_color and stats.hits>0:
+        if use_color and stats.hits > 0:
             formatted_stat = self.colored(formatted_stat, ratio)
-        formatted_stat += '  {code}\n'.format(code=stats.code)
+        formatted_stat += '  {code}'.format(code=stats.code)
         return formatted_stat
 
-    def save_txt(self, f, use_color):
+    def to_txt(self, use_color):
         maxim_hits_digits = 9
         maxim_time_digits = 12
         for line_no in self.stats.keys():
@@ -114,28 +114,32 @@ class FileInfo():
         hits_width = maxim_hits_digits+1
         time_width = maxim_time_digits+1
 
-        f.write('Timer unit: {} s\n\n'.format(self.unit))
-        f.write('Total time: {} s\n'.format(self.overall_time))
-        f.write('File: {}\n'.format(self.fname))
-        f.write('Function: {} at line {}\n\n'.format(
+        result_txt = []
+
+        result_txt.append('Timer unit: {} s\n'.format(self.unit))
+        result_txt.append('Total time: {} s'.format(self.overall_time))
+        result_txt.append('File: {}'.format(self.fname))
+        result_txt.append('Function: {} at line {}\n'.format(
             self.func_name, self.line_num))
-        f.write('{line_num:>6}'
-                '{hits:>{hits_digits}}'
-                '{time:>{time_digits}}'
-                '{per_hit:>9}'
-                '{ratio:>9}'
-                '  Line Contents\n'.format(line_num='Line #',
-                                            hits='Hits',
-                                            hits_digits=hits_width,
-                                            time='Time',
-                                            time_digits=time_width,
-                                            per_hit='Per Hit',
-                                            ratio='% Time'))
-        f.write('='*80+'\n')
+        result_txt.append('{line_num:>6}'
+                          '{hits:>{hits_digits}}'
+                          '{time:>{time_digits}}'
+                          '{per_hit:>9}'
+                          '{ratio:>9}'
+                          '  Line Contents\n'.format(line_num='Line #',
+                                                     hits='Hits',
+                                                     hits_digits=hits_width,
+                                                     time='Time',
+                                                     time_digits=time_width,
+                                                     per_hit='Per Hit',
+                                                     ratio='% Time'))
+        result_txt.append('='*80)
 
         for line_num in self.stats.keys():
             stat_str = self.formatted(line_num, hits_width, time_width, use_color)
-            f.write(stat_str)
+            result_txt.append(stat_str)
+
+        return result_txt
 
     def __iadd__(self, other):
         self.check_addable(other)
@@ -176,10 +180,15 @@ def main(paths, output, use_color):
 
     print('Process following {} files: '.format(len(targets)))
     print('\n'.join(['\t{}'.format(f) for f in targets]))
+    print('-'*80)
 
     total = sum(map(FileInfo, targets))
-    with open(output, 'w') as f:
-        total.save_txt(f, use_color)
+    if output is None:
+        for item in total.to_txt(use_color):
+            print(item)
+    else:
+        with open(output, 'w') as f:
+            f.write('\n'.join(total.to_txt(use_color)))
 
 
 if __name__ == '__main__':
@@ -189,8 +198,9 @@ if __name__ == '__main__':
         help='Specify folders/files to be aggregated. When folder is '
         'specified, all text files below the folder are specified')
     parser.add_argument(
-        '--output', default='result.out',
+        '--output', default=None,
         help='Specify the output result name.'
+        'show result in stdout when output does not specified'
     )
     parser.add_argument(
         '--color', action='store_true',
