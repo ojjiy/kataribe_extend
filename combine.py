@@ -102,7 +102,7 @@ class FileInfo():
         formatted_stat += '  {code}'.format(code=stats.code)
         return formatted_stat
 
-    def to_txt(self, use_color):
+    def show_result(self, use_color):
         maxim_hits_digits = 9
         maxim_time_digits = 12
         for line_no in self.stats.keys():
@@ -114,14 +114,12 @@ class FileInfo():
         hits_width = maxim_hits_digits+1
         time_width = maxim_time_digits+1
 
-        result_txt = []
-
-        result_txt.append('Timer unit: {} s\n'.format(self.unit))
-        result_txt.append('Total time: {} s'.format(self.overall_time))
-        result_txt.append('File: {}'.format(self.fname))
-        result_txt.append('Function: {} at line {}\n'.format(
+        print('Timer unit: {} s\n'.format(self.unit))
+        print('Total time: {} s'.format(self.overall_time))
+        print('File: {}'.format(self.fname))
+        print('Function: {} at line {}\n'.format(
             self.func_name, self.line_num))
-        result_txt.append('{line_num:>6}'
+        print('{line_num:>6}'
                           '{hits:>{hits_digits}}'
                           '{time:>{time_digits}}'
                           '{per_hit:>9}'
@@ -133,13 +131,10 @@ class FileInfo():
                                                      time_digits=time_width,
                                                      per_hit='Per Hit',
                                                      ratio='% Time'))
-        result_txt.append('='*80)
+        print('='*80)
 
         for line_num in self.stats.keys():
-            stat_str = self.formatted(line_num, hits_width, time_width, use_color)
-            result_txt.append(stat_str)
-
-        return result_txt
+            print(self.formatted(line_num, hits_width, time_width, use_color))
 
     def __iadd__(self, other):
         self.check_addable(other)
@@ -164,7 +159,7 @@ class FileInfo():
         return self.__add__(other)
 
 
-def main(paths, output, use_color):
+def main(paths, use_color):
     targets = []
     for path in paths:
         if os.path.isdir(path):
@@ -183,12 +178,7 @@ def main(paths, output, use_color):
     print('-'*80)
 
     total = sum(map(FileInfo, targets))
-    if output is None:
-        for item in total.to_txt(use_color):
-            print(item)
-    else:
-        with open(output, 'w') as f:
-            f.write('\n'.join(total.to_txt(use_color)))
+    total.show_result(use_color)
 
 
 if __name__ == '__main__':
@@ -198,13 +188,8 @@ if __name__ == '__main__':
         help='Specify folders/files to be aggregated. When folder is '
         'specified, all text files below the folder are specified')
     parser.add_argument(
-        '--output', default=None,
-        help='Specify the output result name.'
-        'show result in stdout when output does not specified'
-    )
-    parser.add_argument(
         '--color', action='store_true',
         help='colorize result with ANSI escape code')
     args = parser.parse_args()
 
-    main(args.files, args.output, args.color)
+    main(args.files, args.color)
