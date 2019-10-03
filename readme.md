@@ -17,7 +17,7 @@ $ combine.py [files to be aggregated] [folders which contain files to be aggrega
 
 ## Verification
 ```bash
-$ combine.py ./inputs --colorize
+$ combine.py ./inputs --colorize | tee result.out
 $ less -R ./result.out
 ```
 
