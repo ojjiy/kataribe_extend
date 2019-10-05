@@ -32,6 +32,8 @@ class FileInfo():
             'File: {fname:S}\n'
             'Function: {func_name:S} at line {line_num:d}\n',
             ''.join(data[:5]))
+        if summary is None:
+            raise RuntimeError('Wrong header in file {}'.format(filename))
         self.unit = summary['unit']
         self.overall_time = summary['time']
         self.fname = summary['fname']
